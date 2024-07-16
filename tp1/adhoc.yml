@@ -1,0 +1,128 @@
+---
+# TP1: Ad Hoc Commands
+
+# 1- Déclarer les machines cibles dans le fichier /etc/hosts de la machine master
+- hosts: localhost
+  tasks:
+    - name: Ajouter les entrées pour les clients dans /etc/hosts
+      lineinfile:
+        path: /etc/hosts
+        line: "{{ item }}"
+      loop:
+        - "192.168.99.11 client1"
+        - "192.168.99.12 client2"
+      become: true
+
+# 2- Créer un fichier inventaire hosts dans votre répertoire de travail
+# Le fichier hosts est créé manuellement
+
+# 3- Partager les clés SSH de root sur les machines cibles
+- hosts: all
+  tasks:
+    - name: Partager les clés SSH
+      authorized_key:
+        user: vagrant
+        key: "{{ lookup('file', '/home/vagrant/.ssh/id_rsa.pub') }}"
+
+# 4- Lancer un ping ansible pour vérifier la connexion aux machines
+- hosts: all
+  tasks:
+    - name: Ping les machines
+      ping:
+
+# 5- Utiliser le module user pour créer un utilisateur ansible1 dans les machines cibles avec un mot de passe ansible.
+- hosts: all
+  tasks:
+    - name: Créer l'utilisateur ansible1
+      user:
+        name: ansible1
+        password: "$1$53uobB.F$iCDpFBu.GdGhHhycr2SQD/"
+      become: true
+
+# 6- Utiliser le module copy pour copier un fichier de votre machine locale vers le répertoire personnel des machines cibles.
+- hosts: all
+  tasks:
+    - name: Copier le fichier local vers les machines cibles
+      copy:
+        src: /home/vagrant/local_file.txt
+        dest: /home/vagrant/remote_file.txt
+      become: true
+
+# 7- Exécuter la commande ls pour vérifier que le fichier a bien été copié (toujours via Ansible bien sûr).
+- hosts: all
+  tasks:
+    - name: Vérifier la présence du fichier copié
+      command: ls /home/vagrant/remote_file.txt
+      register: file_check
+
+    - debug:
+        var: file_check.stdout
+
+# 8- Essayer de copier maintenant le fichier dans /var/log
+- hosts: all
+  tasks:
+    - name: Copier le fichier dans /var/log
+      copy:
+        src: /home/vagrant/local_file.txt
+        dest: /var/log/remote_file.txt
+      become: true
+      ignore_errors: true
+      register: copy_result
+
+    - debug:
+        var: copy_result
+
+# 9- Faire le nécessaire pour que la commande réussisse.
+- hosts: all
+  tasks:
+    - name: Ajouter ansible1 à la liste des sudoers
+      lineinfile:
+        path: /etc/sudoers
+        line: 'ansible1 ALL=(ALL) NOPASSWD:ALL'
+        state: present
+      become: true
+
+    - name: Copier le fichier dans /var/log avec l'utilisateur ansible1
+      copy:
+        src: /home/vagrant/local_file.txt
+        dest: /var/log/remote_file.txt
+      become: true
+      become_user: ansible1
+
+# 10- Utiliser le module yum pour installer le dernier paquet httpd dans la machine cible1.
+- hosts: client1
+  tasks:
+    - name: Installer le paquet httpd
+      yum:
+        name: httpd
+        state: latest
+      become: true
+
+# 11- Copier un fichier nommé index.html depuis votre serveur local vers /var/www/html de la machine cible1.
+- hosts: client1
+  tasks:
+    - name: Copier le fichier index.html
+      copy:
+        src: /home/vagrant/index.html
+        dest: /var/www/html/index.html
+      become: true
+
+# 12- Vérifier avec un curl que le serveur httpd est bien monté
+- hosts: client1
+  tasks:
+    - name: Vérifier le serveur httpd
+      command: curl http://localhost/index.html
+      register: curl_result
+
+    - debug:
+        var: curl_result.stdout
+
+# 13- Si c'est réussi, désinstaller le paquet httpd du serveur cible1.
+- hosts: client1
+  tasks:
+    - name: Désinstaller le paquet httpd
+      yum:
+        name: httpd
+        state: absent
+      become: true
+
