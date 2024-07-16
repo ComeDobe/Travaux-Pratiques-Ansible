@@ -1,0 +1,79 @@
+TP1 : Ad Hoc Commands
+
+
+# 1-	Déclarer les machines cibles dans le fichier /etc/hosts de la machine master
+
+sudo nano /etc/hosts
+192.168.99.11 client1
+192.168.99.12 client2
+
+
+# 2-	Créer un fichier inventaire hosts dans votre répertoire de travail
+
+nano hosts
+
+[web]
+client1 ansible_host=192.168.99.11 ansible_user=vagrant ansible_ssh_private_key_file=/home/vagrant/.ssh/id_rsa
+client2 ansible_host=192.168.99.12 ansible_user=vagrant ansible_ssh_private_key_file=/home/vagrant/.ssh/id_rsa
+
+# 3-	Partager les clés SSH de root sur les machines cibles
+
+ssh-copy-id vagrant@192.168.99.11
+ssh-copy-id vagrant@192.168.99.12
+
+# 4-	Lancer un ping ansible pour vérifier la connexion aux machines
+
+ansible -i hosts all -m ping
+
+# 5-	Utiliser le module user pour créer un utilisateur ansible1 dans les machines cibles avec un mot de passe ansible.
+# creation de mot de passe ansible
+openssl passwd -1 "vagrant"
+ansible -i hosts all -b -m user -a 'name=ansible1 password="$1$53uobB.F$iCDpFBu.GdGhHhycr2SQD/"'
+
+- verifier la creation de l'utilisateur
+
+ansible -i hosts all -b -m shell -a "grep '^ansible1:' /etc/passwd"
+
+- verifier les informations de l'utilisateur avec setup
+ansible -i hosts all -m setup -a "filter=ansible1"
+
+# 6-	Utiliser le module copy pour copier un fichier de votre machine locale vers le répertoire personnel des machines cibles. 
+
+
+touch /home/vagrant/local_file.txt
+
+ansible -i hosts all -b -m copy -a "src=/home/vagrant/local_file.txt dest=/home/vagrant/remote_file.txt"
+
+# 7-	Exécuter la commande ls pour vérifier que le fichier a bien été copié (toujours via Ansible bien sûr). 
+
+ansible -i hosts all -m command -a "ls /home/vagrant/remote_file.txt"
+
+# 8-	Essayer de copier maintenant le fichier dans /var/log :
+a. Est-ce que la commande réussit ? Si non, essayez de réexecuter la commande avec l’utilisateur ansible1 mais en tant que root (via sudo), quelle option est faite pour cela ?
+
+ansible -i hosts all -b -m copy -a "src=/home/vagrant/local_file.txt dest=/var/log/remote_file.txt"
+
+# 9-	Faire le nécessaire pour que la commande réussisse. 
+
+# En cas d'echec
+ansible -i hosts all -b -m lineinfile -a "path=/etc/sudoers line='ansible1 ALL=(ALL) NOPASSWD:ALL' state=present"
+
+ansible -i hosts all -b -u ansible1 -m copy -a "src=/home/vagrant/local_file.txt dest=/var/log/remote_file.txt"
+
+# 10-	Utiliser le module yum pour installer le dernier paquet httpd dans la machine cible1. 
+
+ansible -i hosts client1 -b -m yum -a "name=httpd state=latest"
+
+# 11-	Copier un fichier nommé index.html depuis votre serveur local vers /var/www/html de la machine cible1. 
+
+touch /home/vagrant/index.html
+
+ansible -i hosts client1 -b -m copy -a "src=/home/vagrant/index.html dest=/var/www/html/index.html"
+
+# 12-	Vérifier avec un curl que le serveur httpd est bien monté
+
+ansible -i hosts client1 -m command -a "curl http://localhost/index.html"
+
+# 13-	Si c’est réussi, désinstaller le paquet httpd du serveur cible1. 
+
+ansible -i hosts client1 -b -m yum -a "name=httpd state=absent"
