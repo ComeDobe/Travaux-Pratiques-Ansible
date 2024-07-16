@@ -44,7 +44,7 @@
   tasks:
     - name: Copier le fichier local vers les machines cibles
       copy:
-        src: /home/vagrant/local_file.txt
+        src: /home/vagrant/projet/Travaux-Pratiques/tp1/local_file.txt
         dest: /home/vagrant/remote_file.txt
       become: true
 
@@ -63,7 +63,7 @@
   tasks:
     - name: Copier le fichier dans /var/log
       copy:
-        src: /home/vagrant/local_file.txt
+        src: /home/vagrant/projet/Travaux-Pratiques/tp1/local_file.txt
         dest: /var/log/remote_file.txt
       become: true
       ignore_errors: true
@@ -108,6 +108,17 @@
       become: true
 
 # 12- Vérifier avec un curl que le serveur httpd est bien monté
+
+# activer le serveur httpd
+- hosts: client1
+  tasks:
+    - name: Activer le serveur httpd
+      service:
+        name: httpd
+        state: started
+        enabled: true
+      become: true
+
 - hosts: client1
   tasks:
     - name: Vérifier le serveur httpd
