@@ -1,0 +1,59 @@
+---
+- name: Demander les informations de l'utilisateur
+  hosts: localhost
+  vars_prompt:
+    - name: "login"
+      prompt: "Saisir votre login"
+      private: yes
+    - name: "password"
+      prompt: "Saisir votre mot de passe"
+      private: yes
+ 
+  tasks:
+    - name: Générer le hash du mot de passe
+      set_fact:
+        hashed_password: "{{ password | password_hash('sha512') }}"
+ 
+    - name: Afficher les informations saisies
+      debug:
+        msg: "Votre login est {{ login }} et votre mot de passe hashé est {{ hashed_password }}"
+ 
+ 
+- name: Ping playbook
+  hosts: all
+  vars:
+    ssh_port: 22
+ 
+  tasks:
+    - name: Tester la connexion aux machines cibles
+      ping:
+ 
+    - name: Afficher le contenu de ssh_port
+      debug:
+        msg: "Le port SSH a pour valeur {{ ssh_port }}"
+ 
+    - name: Afficher le contenu de /etc/motd
+      command: cat /etc/motd
+      register: motd_content
+ 
+    - debug:
+        var: motd_content.stdout_lines
+ 
+    - name: Copier un fichier
+      copy:
+        src: /home/vagrant/index.html
+        dest: /home/vagrant
+ 
+- hosts: all
+  vars_files:
+    - external_vars.yml
+ 
+  tasks:
+    - name: Installer le paquet httpd
+      yum:
+        name: "{{ package }}"
+        state: present
+ 
+    - name: Afficher les hostnames des machines cibles
+      debug:
+        msg: "Hostname de la machine : {{ ansible_hostname }}"
