@@ -1,0 +1,78 @@
+---
+- hosts:
+    - 'client1'
+    - 'client2'
+  become: true
+
+  tasks:
+
+    - name: Installation des paquets httpd et firewalld
+      yum:
+        name:
+          - httpd
+          - firewalld
+        state: latest
+
+    - name: Afficher les hôtes cibles
+      debug:
+        msg:
+          - "client1 : '{{ hostvars['client1'] }}'"
+          - "client2 : '{{ hostvars['client2'] }}'"
+
+    - name: Ajouter les hôtes cibles dans des variables
+      set_fact:
+        host_client1: "{{ hostvars['client1'] }}"
+        host_client2: "{{ hostvars['client2'] }}"
+
+    - name: Définir le contenu du fichier index.html sur client1
+      copy:
+        content: "Hello World client1\n"
+        dest: /var/www/html/index.html
+      when: inventory_hostname == 'client1'
+
+    - name: Définir le contenu du fichier index.html sur client2
+      copy:
+        content: "Hello World client2\n"
+        dest: /var/www/html/index.html
+      when: inventory_hostname == 'client2'
+
+    - name: Activer et démarrer le service firewalld
+      systemd:
+        name: firewalld
+        enabled: yes
+        state: started
+
+    - name: Autoriser les connexions HTTP dans firewalld
+      firewalld:
+        service: http
+        permanent: yes
+        state: enabled
+      notify:
+        - restart firewalld
+
+    - name: Démarrer et activer le service httpd
+      systemd:
+        name: httpd
+        state: started
+        enabled: yes
+
+    - name: Tester la connexion HTTP vers les cibles
+      uri:
+        url: "http://{{ ansible_host }}"
+      register: result
+      until: result.status == 200
+      retries: 5
+      delay: 10
+
+  handlers:
+    - name: restart firewalld
+      systemd:
+        name: firewalld
+        state: restarted
+
+    - name: Installer le module firewalld
+      pip:
+        name: ansible-galaxy-collection-community.general
+        state: present
+      when: ansible_python.module_utils is not search('/usr/lib/python3.*/site-packages/ansible_collections/community/general/plugins/modules/firewalld.py')
+

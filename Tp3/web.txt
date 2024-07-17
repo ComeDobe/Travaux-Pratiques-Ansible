@@ -1,0 +1,14 @@
+Lab PlayBook Web
+
+
+1)	Ecrire une tache qui permet de vous assurer que les paquets httpd et firewalld sont à jour sur les machine cible1 et cible2
+2)	Rajouter une tache pour s’assurer que le contenu du fichier /var/www/html/index.html est « Ici le serveur dev » sur cible1 et « Ici le serveur prod attention ! » sur cible2
+3)	Rajouter une tache pour s’assurer que le service firewalld est activé et démarré
+4)	Rajouter une tache pour s’assurer que firewalld autorise les connexion httpd
+5)	Si le module n’est pas reconnue installer le module firewalld dans le nœud Ansible à l’aide de cette commande :
+$ ansible-galaxy collection install ansible.posix
+
+6)	S’assurer que httpd est bien démarré et activé
+7)	Tester la connexion vers les cibles
+
+
