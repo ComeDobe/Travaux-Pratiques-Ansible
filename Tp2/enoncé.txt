@@ -1,0 +1,7 @@
+Exercice d’application Variables Ansible
+
+1.	Développer un playbook qui demande à l’utilisateur de saisir son login et mot de passe et les affiche à la console dans une deuxième tache
+2.	Déclarer une variable ssh_port contenant la valeur 22 et ajouter une tache qui affiche son contenu.
+3.	Créer le fichier external_vars.yml contenant la variables package avec pour valeur httpd. Rajouter un play utilisant le module yum qui prend en paramètre la variable package pour installer le serveur httpd sur les machines cible1 et cible2.
+4.	Ajouter une tache qui affiche les hostname des machines cibles à partir des variables facts
+
