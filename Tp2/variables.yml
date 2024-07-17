@@ -4,7 +4,7 @@
   vars_prompt:
     - name: "login"
       prompt: "Saisir votre login"
-      private: yes
+      private: no
     - name: "password"
       prompt: "Saisir votre mot de passe"
       private: yes
@@ -41,10 +41,11 @@
  
     - name: Copier un fichier
       copy:
-        src: /home/vagrant/index.html
+        src: /home/vagrant/Travaux-Pratiques/Tp2/index.html
         dest: /home/vagrant
  
 - hosts: all
+  become: yes
   vars_files:
     - external_vars.yml
  
