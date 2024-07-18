@@ -1,0 +1,92 @@
+---
+- name: "Nginx Installation and Troubleshooting"
+  become: yes
+  hosts: prod:proxy:staging
+  tasks:
+    - name: Upgrade all packages
+      yum:
+        name: '*'
+        state: latest
+
+    - name: "Install epel-release"
+      yum:
+        name: epel-release
+        state: present
+
+    - name: "Install nginx"
+      yum:
+        name: nginx
+        state: latest
+
+    - name: "Check if port 80 is in use"
+      shell: netstat -tuln | grep :80
+      register: port_check
+      ignore_errors: yes
+
+    - name: "Display port 80 status"
+      debug:
+        var: port_check.stdout_lines
+
+    - name: "Check Nginx configuration"
+      command: nginx -t
+      register: nginx_config_test
+      ignore_errors: yes
+
+    - name: "Display Nginx configuration test results"
+      debug:
+        var: nginx_config_test.stdout_lines
+
+    - name: "Display Nginx status"
+      debug:
+        var: nginx_status.stdout_lines
+
+    - name: "Check Nginx error log"
+      command: tail -n 20 /var/log/nginx/error.log
+      register: nginx_error_log
+      ignore_errors: yes
+
+    - name: "Display Nginx error log"
+      debug:
+        var: nginx_error_log.stdout_lines
+
+    - name: "Check journalctl for Nginx errors"
+      command: journalctl -xe --no-pager
+      register: journalctl_output
+      ignore_errors: yes
+
+    - name: "Display journalctl output"
+      debug:
+        var: journalctl_output.stdout_lines
+
+    - name: "Check Nginx directory permissions"
+      command: ls -la /etc/nginx /var/log/nginx
+      register: nginx_permissions
+      ignore_errors: yes
+
+    - name: "Display Nginx directory permissions"
+      debug:
+        var: nginx_permissions.stdout_lines
+
+    - name: "Verify Nginx installation"
+      command: rpm -qa | grep nginx
+      register: nginx_installed
+      ignore_errors: yes
+
+    - name: "Display Nginx installation status"
+      debug:
+        var: nginx_installed.stdout_lines
+
+
+
+    - name: "Allow http connection"
+      firewalld:
+        service: "http"
+        permanent: yes
+        state: "enabled"
+
+    - name: "Reload firewalld"
+      command: firewall-cmd --reload
+
+   
+...
+
