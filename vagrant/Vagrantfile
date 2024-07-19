@@ -1,0 +1,48 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+# To enable zsh, please set ENABLE_ZSH env var to "true" before launching vagrant up
+#   + On Windows => $env:ENABLE_ZSH="true"
+#   + On Linux/macOS  => export ENABLE_ZSH="true"
+
+Vagrant.configure("2") do |config|
+  config.vbguest.auto_update = false
+  config.vm.box_check_update = false
+  config.vm.boot_timeout = 1200
+
+  script = "install_guest_additions.sh"
+
+  # Configuration commune pour toutes les VMs
+  config.vm.provider "virtualbox" do |v|
+    v.memory = 2048
+    v.cpus = 2
+  end
+
+  config.vm.define "ansible" do |ansible|
+    ansible.vm.box = "geerlingguy/centos7"
+    ansible.vm.network "private_network", ip: "192.168.99.10"
+    ansible.vm.hostname = "ansible"
+    ansible.vm.provider "virtualbox" do |v|
+      v.name = "ansible"
+    end
+    ansible.vm.provision "shell", path: "init_config.sh"
+    ansible.vm.provision "shell", path: "install_ansible.sh", args: ["master"]
+    ansible.vm.provision "shell", path: script
+  end
+
+  (1..2).each do |i|
+    config.vm.define "client#{i}" do |client|
+      client.vm.box = "geerlingguy/centos7"
+      client.vm.network "private_network", ip: "192.168.99.1#{i}"
+      client.vm.hostname = "client#{i}"
+      client.vm.provider "virtualbox" do |v|
+        v.name = "client#{i}"
+      end
+      client.vm.provision "shell", path: "init_config.sh"
+      client.vm.provision "shell", path: "install_ansible.sh", args: ["node"]
+      client.vm.provision "shell", path: script
+    end
+  end
+
+  # Provision finale pour toutes les VMs
+  config.vm.provision "shell", inline: "echo 'All VMs are ready!'"
+end
