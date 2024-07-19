@@ -1,0 +1,81 @@
+---
+- name: Install docker on a Centos 7 machine
+  hosts: prod
+  become: yes
+  tags: docker
+  vars_files:
+    - files/secrets/credentials.yml
+  pre_tasks:
+    - name: Install pre-requisite packages
+      yum:
+        name: "{{item}}"
+        state: latest
+      loop:
+        - yum-utils
+        - device-mapper-persistent-data
+        - lvm2
+        - python3
+
+    - name: Get Python version
+      command: python3 --version
+      register: python_version
+      changed_when: false
+
+    - name: Download pip script for Python 3.6
+      get_url:
+        url: https://bootstrap.pypa.io/pip/3.6/get-pip.py
+        dest: /tmp/get-pip.py
+      when: "'Python 3.6' in python_version.stdout"
+
+    - name: Download pip script for Python 3.8+
+      get_url:
+        url: https://bootstrap.pypa.io/get-pip.py
+        dest: /tmp/get-pip.py
+      when: "'Python 3.6' not in python_version.stdout"
+
+    - name: install python-pip
+      command: python3 /tmp/get-pip.py
+
+    - name: Install docker python
+      pip:
+        name: docker-py
+        executable: /usr/local/bin/pip3
+
+  tasks:
+    - name: Add Docker CE repo
+      get_url:
+        url: https://download.docker.com/linux/centos/docker-ce.repo
+        dest: /etc/yum.repos.d/docker-ce.repo
+
+    - name: Remove old Docker installation
+      yum:
+        name:
+          - docker
+          - docker-client
+          - docker-client-latest
+          - docker-common
+          - docker-latest
+          - docker-latest-logrotate
+          - docker-logrotate
+          - docker-engine
+        state: absent
+
+    - name: Install Docker CE
+      yum:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+        state: present
+
+    - name: Start and enable the Docker daemon
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Add remote user to docker group
+      user:
+        name: "{{ ansible_user }}"
+        groups: docker
+        append: yes

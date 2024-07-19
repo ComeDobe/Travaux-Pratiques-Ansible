@@ -1,0 +1,8 @@
+---
+ansible_user: vagrant
+ansible_ssh_pass: vagrant
+ansible_sudo_pass: root
+ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+welcome_message: Beienvenue sur le serveur {{ ansible_hostname }}
+port: 8090
+
