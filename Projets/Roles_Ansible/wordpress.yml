@@ -1,0 +1,33 @@
+---
+- hosts: prod
+  become: true
+  vars:
+    system_user: vagrant
+  vars_files:
+    - files/secrets/credentials.yml
+
+  pre_tasks:
+    - name: Create www data user
+      user: 
+        name: www-data
+        state: present
+
+    - name: Install Docker Compose on target
+      get_url:
+        url: "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-Linux-x86_64"
+        dest: /usr/local/bin/docker-compose  # Changed to /usr/local/bin for better practice
+        mode: 'u+x,g+x'
+
+  tasks:
+    - name: Ensure docker-compose is executable
+      command: /usr/local/bin/docker-compose --version
+      register: docker_compose_version
+      changed_when: false
+
+    - name: Check if docker-compose is installed
+      fail:
+        msg: "docker-compose is not installed correctly. Please check the installation."
+      when: docker_compose_version.rc != 0
+
+  roles:
+    - role: ansible-role-containerized-wordpress
