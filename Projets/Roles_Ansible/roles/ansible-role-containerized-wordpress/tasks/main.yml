@@ -35,16 +35,31 @@
     group: "{{ system_user }}"
     mode: 0644
 
+- name: Check used ports
+  shell: netstat -tuln
+  register: used_ports
+  changed_when: false
+
+- name: Display used ports
+  debug:
+    var: used_ports.stdout_lines
+
+- name: Check and stop existing containers
+  command: "{{ compose_binary_dir }}/docker-compose -f docker-compose.yml down"
+  args:
+    chdir: "{{ compose_project_dir }}"
+  ignore_errors: yes
+
 - name: Run docker-compose up
   command:
-    cmd: "{{ compose_binary_dir }}/docker-compose -f docker-compose.yml up -d"
+    cmd: "{{ compose_binary_dir }}/docker-compose -f docker-compose.yml up -d --force-recreate"
   args:
     chdir: "{{ compose_project_dir }}"
 
 - name: Waiting for all containers to start up and {{ domain }} to be accessible
   wait_for:
     host: "{{ domain }}"
-    port: 80
+    port: 8080
     timeout: 180
   register: host_accessible
   failed_when: False
@@ -80,4 +95,4 @@
       - "Setup successfully complete."
       - ""
       - "Wordpress instance is available on following IP: {{ inventory_hostname }}"
-      - "If DNS is pointing to this IP, it'll be available on: {{ domain }}"
+      - "If DNS is pointing to this IP, it'll be available on: {{ domain }}:8080"
