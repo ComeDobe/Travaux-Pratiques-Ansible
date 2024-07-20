@@ -96,3 +96,4 @@
       - ""
       - "Wordpress instance is available on following IP: {{ inventory_hostname }}"
       - "If DNS is pointing to this IP, it'll be available on: {{ domain }}:8080"
+ 
